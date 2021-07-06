@@ -67,13 +67,8 @@ void
 list_d (int conn) 
 {
     DIR * dp = opendir(dir_name) ;
-    if(dp == NULL) {
-        perror("opendir: ") ;
-        send_header(conn, 1) ;
-        shutdown(conn, SHUT_WR) ;
-        return ;
-    }
-    else {
+    
+    if (dp != NULL) {
         send_header(conn, 0) ;
 
         struct dirent * sub ;
@@ -93,6 +88,12 @@ list_d (int conn)
             }   
         }
         shutdown(conn, SHUT_WR) ;
+    }
+    else {
+        perror("opendir: ") ;
+        send_header(conn, 1) ;
+        shutdown(conn, SHUT_WR) ;
+        return ;
     }
 }   
 
