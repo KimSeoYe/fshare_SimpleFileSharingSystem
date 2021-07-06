@@ -9,7 +9,7 @@
 #include <netinet/in.h> 
 #include <linux/limits.h>
 #include <pthread.h>
-
+ 
 #include "socket.h"
 
 char dir_name[PATH_MAX] ; // pointer로? PATH_MAX로?
