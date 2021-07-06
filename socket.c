@@ -9,8 +9,60 @@
 #include <netinet/in.h> 
 #include <arpa/inet.h>
 #include <linux/limits.h>
+#include <pthread.h>
 
 #include "socket.h"
+
+pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER ;
+
+Node meta_data = {0, 0, 0x0, 0x0} ;
+
+void 
+print_meta_data () 
+{
+    Node* itr = 0x0;
+    printf("============ clients ==============\n");
+    pthread_mutex_lock(&m);
+    for(itr = meta_data.next; itr != 0x0; itr = itr->next) {
+        printf("%s %d\n", itr->file_name, itr->ver);
+    }
+    pthread_mutex_unlock(&m);
+    printf("===================================\n");
+}
+
+void
+append (int ver, char * file_name)
+{
+	Node * new_node = (Node *) malloc(sizeof(Node) * 1) ;
+	new_node->next = 0x0 ;
+	new_node->ver = ver ;
+    new_node->name_len = strlen(file_name) ;
+    new_node->file_name = file_name ;
+
+	Node* itr = 0x0, *curr = 0x0;
+    
+	pthread_mutex_lock(&m);
+
+    for (itr = &meta_data ; itr != 0x0 ; itr = itr->next) {
+        curr = itr;
+    }
+    curr->next = new_node;
+
+    pthread_mutex_unlock(&m);
+}
+
+void
+update_version (char * file_name)
+{
+    Node * itr = 0x0 ;
+
+    for (itr = meta_data.next; itr != 0x0; itr = itr->next) {
+        if (strcmp(itr->file_name, file_name) == 0) {
+            itr->ver ++ ;
+            break ;
+        }
+    }
+}
 
 void
 send_header (int sock, int h)
@@ -26,13 +78,21 @@ send_header (int sock, int h)
 
 int
 recv_header (int sock)
-{
+{   
+    int s = 0 ; 
+    int len = 4 ;
     int header ;
-    int s = 0 ;
-    int len = 0 ;
-    while (s < 4 && (s = recv(sock, &header, 4, 0)) > 0) {
-        len += s ;
+    char * head_p = (char *) & header ;
+
+    while (len > 0) {
+        s = recv(sock, head_p, len, 0) ;
+        if (s == 0) {
+            return -1 ;
+        }
+        head_p += s ;
+        len -= s ;
     }
+
     return header ;
 }
 
@@ -93,6 +153,19 @@ recv_n_message (int sock, int n)
     }
     
     return data ;
+}
+
+void
+recv_meta_data (int sock) 
+{
+    int ver, len ;
+    char * data ;
+
+    while ((ver = recv_header(sock)) > 0) {
+        len = recv_header(sock) ;
+        data = recv_n_message(sock, len) ;
+        append(ver, data) ;
+    }
 }
 
 void

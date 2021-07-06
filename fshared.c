@@ -74,17 +74,14 @@ list_d (int conn)
         struct dirent * sub ;
         for ( ; sub = readdir(dp); ) {
             if (sub->d_type == DT_REG) { 
-
-                int len = strlen(sub->d_name) + 1 ;
-                char * file_name = (char *) malloc(sizeof(char) * len) ;
-                strcpy(file_name, sub->d_name) ;
-                strcat(file_name, "\n") ;   
-
-                int s = 0 ;
-                while (len > 0 && (s = send(conn, file_name, len, 0)) > 0) {
-                    file_name += s ;
-                    len -= s ;
-                }
+                /*
+                    1. initialize linked list (meta_data) -> temporary!!
+                    2. send to the client! "send_node"
+                */
+                append(0, sub->d_name) ;
+                send_header(conn, 0) ;
+                send_header(conn, strlen(sub->d_name)) ;
+                send_message(conn, sub->d_name) ;
             }   
         }
         shutdown(conn, SHUT_WR) ;

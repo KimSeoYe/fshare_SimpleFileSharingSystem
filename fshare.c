@@ -123,24 +123,8 @@ list (char * ip_addr, int port_num, int option)
         exit(1) ;
     }
 
-    char buf[1024] ;
-    char * data = 0x0;
-    int len = 0 ;
-    int s ;
-    while ((s = recv(sock_fd, buf, 1023, 0)) > 0) {
-        buf[s] = 0x0 ;
-        if (data == 0x0) {
-            data = strdup(buf) ;
-            len = s ;
-        }
-        else {
-            data = realloc(data, len + s + 1) ;
-            strncpy(data + len, buf, s) ;
-            data[len + s] = 0x0 ;
-            len += s ;
-        }
-    }
-    printf("%s", data) ;
+    recv_meta_data(sock_fd) ;
+    print_meta_data() ;
 
     close(sock_fd) ;
 }
