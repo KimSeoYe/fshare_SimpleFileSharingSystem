@@ -153,7 +153,7 @@ put (char * file_name)
     }
 
     // debug
-    // print_meta_data() ;
+    print_meta_data() ;
 
     close(sock_fd) ;
     free(file_name) ;
