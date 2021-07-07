@@ -164,7 +164,7 @@ put_d (int conn)
     send_int(conn, 0) ;
     send_int(conn, new_version) ;
     shutdown(conn, SHUT_WR) ;
-
+ 
     recv_and_write(conn, file_path) ;
 
     return ;
