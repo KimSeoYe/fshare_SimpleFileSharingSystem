@@ -166,8 +166,7 @@ put (char * ip_addr, int port_num, int option, char * file_name)
     stat(file_name, &st) ;
     if (!S_ISREG(st.st_mode))
         goto err_exit ;
- 
-    // need to send the length of the filename
+
     send_int(sock_fd, strlen(file_name)) ;
     send_message(sock_fd, file_name) ;
 
@@ -181,7 +180,6 @@ put (char * ip_addr, int port_num, int option, char * file_name)
         exit(1) ;
     }
 
-    // recv the version of the file
     int ver = recv_int(sock_fd) ;
     /*
         Todo. 2.0
@@ -199,6 +197,7 @@ put (char * ip_addr, int port_num, int option, char * file_name)
         append(file_name, ver) ;
     }
 
+    print_meta_data() ;
 
     return ;
 
@@ -228,5 +227,9 @@ main (int argc, char ** argv)
             break ;
     }
 
+    /*
+        Todo. 2.0
+        Command line interface need to be changed!
+    */
     return 0 ;
 }

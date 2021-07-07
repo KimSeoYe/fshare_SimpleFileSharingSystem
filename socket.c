@@ -57,6 +57,7 @@ update_version (char * file_name, int ver)
     Node * itr = 0x0 ;
     int new_version = -1 ;
 
+    pthread_mutex_lock(&m);
     for (itr = meta_data.next; itr != 0x0; itr = itr->next) {
         if (strcmp(itr->file_name, file_name) == 0) {
             // if the given version is 0, it means increase the version!
@@ -68,6 +69,7 @@ update_version (char * file_name, int ver)
             break ;
         }
     }
+    pthread_mutex_unlock(&m);
 
     return new_version ;
 }
