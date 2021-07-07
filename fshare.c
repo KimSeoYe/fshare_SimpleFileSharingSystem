@@ -13,73 +13,20 @@
 
 #include "socket.h"
 
-int 
-get_parameters (int argc, char ** argv, char * ip_addr, int * port_num, char * file_name) 
+void
+get_parameters (int argc, char ** argv, char * ip_addr, int * port_num) 
 {
-    /*
-        Command Line Interface
-        ./fshare <ip_addr> <command> (<file_name>)
-        command: 
-            list
-            get <file_name>
-            put <file_name>
-    */
-
-    int option ;
-
-    if (argc < 3 || (strcmp(argv[2], "list") != 0 && strcmp(argv[2], "get") != 0 && strcmp(argv[2], "put")) != 0)
-        goto err_exit ;
-
-    /*
-        Q. invalid ip addr ? 
-            - 정규표현식...? https://info-lab.tistory.com/294 
-            - sscanf...? -> %d.%d.%d.%d:%d
-        Q. ip 주소와 port 넘버로 split! -> invalid form일 경우는..?
-        ! atoi는 숫자가 처음 시작한 부분부터 문자 혹은 \0이 나오는 지점까지를 int로 변환한다.
-            ::8080:: -> 8080
-            ::80::80:: -> 80
-    */
+    if (argc != 2) {
+        perror("./fshare <ip_addr>:<port_num>\n") ;
+        exit(1) ;
+    }
 
     char * next_ptr ;
     char * ptr = strtok_r(argv[1], ":", &next_ptr) ;
     strcpy(ip_addr, ptr) ;
     *port_num = atoi(next_ptr) ; 
 
-    if (strcmp(argv[2], "list") == 0) {
-        if (argc != 3) 
-            goto err_exit ;
-
-        option = 1 ;
-    }
-
-    if (strcmp(argv[2], "get") == 0) {
-        if (argc != 4) 
-            goto err_exit ;
-
-        option = 2 ;
-        strcpy(file_name, argv[3]) ;
-    }
-
-    if (strcmp(argv[2], "put") == 0) {
-        if (argc != 4) 
-            goto err_exit ;
-        
-        if (access(argv[3], R_OK) == -1) {
-            perror("ERROR: ") ;
-            exit(1) ;
-        }
-
-        option = 3 ;
-        strcpy(file_name, argv[3]) ;
-    }
-
-    
-
-    return option ;
-
-err_exit:
-    perror("./fshare <ip_addr> <command> (<file_name>)\ncommand:\n\tlist\n\tget <file_name>\n\tput <file_name>\n") ;
-    exit(1) ;
+    return ;
 }
 
 int
@@ -110,11 +57,9 @@ make_connection (char * ip_addr, int port_num) {
 }
 
 void
-list (char * ip_addr, int port_num, int option)
+list (int sock_fd)
 {
-    int sock_fd = make_connection(ip_addr, port_num) ;
-
-    send_int(sock_fd, option) ;
+    send_int(sock_fd, 1) ;
     shutdown(sock_fd, SHUT_WR) ;
 
     int resp_header = recv_int(sock_fd) ;
@@ -130,11 +75,9 @@ list (char * ip_addr, int port_num, int option)
 }
 
 void
-get (char * ip_addr, int port_num, int option, char * file_name)
+get (int sock_fd, char * file_name)
 {
-    int sock_fd = make_connection(ip_addr, port_num) ;
-    
-    send_int(sock_fd, option) ;
+    send_int(sock_fd, 2) ;
 
     // send file name
     send_message(sock_fd, file_name) ;
@@ -150,11 +93,9 @@ get (char * ip_addr, int port_num, int option, char * file_name)
 }
 
 void
-put (char * ip_addr, int port_num, int option, char * file_name)
+put (int sock_fd, char * file_name)
 {
-    int sock_fd = make_connection(ip_addr, port_num) ;
-    
-    send_int(sock_fd, option) ;
+    send_int(sock_fd, 3) ;
 
     if (strstr(file_name, "/") != NULL)
         goto err_exit ;
@@ -211,25 +152,9 @@ main (int argc, char ** argv)
 {
     char ip_addr[32] ; // max 12 ip address + dot(.)
     int port_num ;
-    char file_name[PATH_MAX] ; // path_max is to long...
 
-    int option = get_parameters(argc, argv, ip_addr, &port_num, file_name) ;
+    get_parameters(argc, argv, ip_addr, &port_num) ;
+    int sock_fd = make_connection(ip_addr, port_num) ;
 
-    switch (option) {
-        case 1:
-            list(ip_addr, port_num, option) ;
-            break ;
-        case 2:
-            get(ip_addr, port_num, option, file_name) ;
-            break ;
-        case 3:
-            put(ip_addr, port_num, option, file_name) ;
-            break ;
-    }
-
-    /*
-        Todo. 2.0
-        Command line interface need to be changed!
-    */
     return 0 ;
 }

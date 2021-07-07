@@ -17,6 +17,11 @@ pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER ;
 
 Node meta_data = {0, 0, 0x0, 0x0} ;
 
+/*
+    Todo. 2.0
+    client는 lock이 필요 없음,,,
+*/
+
 void 
 print_meta_data () 
 {

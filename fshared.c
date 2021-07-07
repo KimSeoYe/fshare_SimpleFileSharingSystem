@@ -71,6 +71,8 @@ list_d (int conn)
             }   
         }
         shutdown(conn, SHUT_WR) ;
+
+        print_meta_data() ;
     }
     else {
         perror("opendir: ") ;
