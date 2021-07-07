@@ -156,7 +156,6 @@ put (char * ip_addr, int port_num, int option, char * file_name)
     
     send_int(sock_fd, option) ;
 
-    // Todo. check if filename is valid
     if (strstr(file_name, "/") != NULL)
         goto err_exit ;
 
@@ -181,6 +180,15 @@ put (char * ip_addr, int port_num, int option, char * file_name)
         perror("ERROR: cannot request put\n") ;
         exit(1) ;
     }
+
+    // recv the version of the file
+    int ver = recv_int(sock_fd) ;
+    printf("%s %d\n", file_name, ver) ;
+    /*
+        Todo. 2.0
+        만들어졌을 때 Put 하는 경우 -> linked list에 append한다.
+        이미 있는데 수정되어서 Put 하는 경우 -> linked list에서 찾아서 update한다.
+    */
 
     return ;
 

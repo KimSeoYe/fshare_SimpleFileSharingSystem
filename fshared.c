@@ -64,7 +64,7 @@ list_d (int conn)
                     1. initialize linked list (meta_data) -> temporary!!
                     2. send to the client! "send_node"
                 */
-                append(0, sub->d_name) ;
+                append(sub->d_name, 0) ;
                 send_int(conn, 0) ;
                 send_int(conn, strlen(sub->d_name)) ;
                 send_message(conn, sub->d_name) ;
@@ -126,10 +126,6 @@ put_d (int conn)
         2. make proper path
         3. recv and write
     */
-
-    // need to recv the length of the file first
-    // then recv the file name
-
     unsigned int name_len = recv_int(conn) ;
     char * file_name = recv_n_message(conn, name_len) ;
 
@@ -137,17 +133,39 @@ put_d (int conn)
     strcpy(file_path, dir_name) ; // Todo. check if the dir_name has /
     strcat(file_path, file_name) ;
 
-    // if it is exist..
+    /*
+        Todo. 2.0 
+        need to be changed!
+
+        * if it is exist ?
+        -> find it in the linked list
+            -> exist: update version (+1) 
+            -> not exist: bug...
+
+        * not exist: append (ver = 0)
+
+        * send_int 0 (success)
+        * send the version (updated)
+        * shutdown
+        * then recv and write
+    */
+    int new_version ;
     if (access(file_path, F_OK) == 0) {
-        send_int(conn, 1) ; // Todo. unsigned! -> success:0 / ...
-        shutdown(conn, SHUT_WR) ;
-        return ;
+        new_version = update_version(file_name, 0) ;
+        if (new_version == -1) {
+            send_int(conn, 1) ;
+            shutdown(conn, SHUT_WR) ;
+        }
+    }
+    else {
+        append(file_name, 0) ;
     }
 
-    recv_and_write(conn, file_path) ;
-
     send_int(conn, 0) ;
+    send_int(conn, new_version) ;
     shutdown(conn, SHUT_WR) ;
+
+    recv_and_write(conn, file_path) ;
 
     return ;
 }

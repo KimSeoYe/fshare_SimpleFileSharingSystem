@@ -7,9 +7,9 @@ typedef struct _node {
 
 void print_meta_data () ;
 
-void append (int ver, char * file_name) ;
+void append (char * file_name, int ver) ;
 
-void update_version (char * file_name, int ver) ;
+int update_version (char * file_name, int ver) ;
 
 void send_int (int sock, int h) ;
 

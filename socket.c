@@ -31,7 +31,7 @@ print_meta_data ()
 }
 
 void
-append (int ver, char * file_name)
+append (char * file_name, int ver)
 {
 	Node * new_node = (Node *) malloc(sizeof(Node) * 1) ;
 	new_node->next = 0x0 ;
@@ -51,17 +51,25 @@ append (int ver, char * file_name)
     pthread_mutex_unlock(&m);
 }
 
-void
+int
 update_version (char * file_name, int ver)
 {
     Node * itr = 0x0 ;
+    int new_version = -1 ;
 
     for (itr = meta_data.next; itr != 0x0; itr = itr->next) {
         if (strcmp(itr->file_name, file_name) == 0) {
-            itr->ver = ver ;
+            // if the given version is 0, it means increase the version!
+            // because there are no case which need to update the version as 0.
+            if (ver == 0) itr->ver ++ ;
+            else itr->ver = ver ;
+            new_version = itr->ver ;
+
             break ;
         }
     }
+
+    return new_version ;
 }
 
 void
@@ -164,7 +172,7 @@ recv_meta_data (int sock)
     while ((ver = recv_int(sock)) > 0) {
         len = recv_int(sock) ;
         data = recv_n_message(sock, len) ;
-        append(ver, data) ;
+        append(data, ver) ;
     }
 }
 
