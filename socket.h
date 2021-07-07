@@ -7,7 +7,7 @@ typedef struct _node {
 
 void print_meta_data () ;
 
-void append (char * file_name, int ver) ;
+void append_meta_data (char * file_name, int ver) ;
 
 int increase_version (char * file_name) ;
 
@@ -23,7 +23,7 @@ char * recv_message (int sock) ;
 
 char * recv_n_message (int sock, int n) ;
 
-void recv_meta_data (int sock) ;
+void send_meta_data (int sock) ;
 
 void read_and_send (int sock, char * file_path) ;
 

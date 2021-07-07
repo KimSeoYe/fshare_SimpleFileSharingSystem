@@ -31,7 +31,7 @@ print_meta_data ()
 }
 
 void
-append (char * file_name, int ver)
+append_meta_data (char * file_name, int ver)
 {
 	Node * new_node = (Node *) malloc(sizeof(Node) * 1) ;
 	new_node->next = 0x0 ;
@@ -181,16 +181,16 @@ recv_n_message (int sock, int n)
 }
 
 void
-recv_meta_data (int sock) 
+send_meta_data (int sock)
 {
-    int ver, len ;
-    char * data ;
-
-    while ((ver = recv_int(sock)) > 0) {
-        len = recv_int(sock) ;
-        data = recv_n_message(sock, len) ;
-        append(data, ver) ;
+    Node * itr = 0x0 ;
+    pthread_mutex_lock(&m) ;
+    for (itr = meta_data.next; itr != 0x0; itr = itr->next) {
+        send_int(sock, itr->ver) ;
+        send_int(sock, itr->name_len) ;
+        send_message(sock, itr->file_name) ;
     }
+    pthread_mutex_unlock(&m) ;
 }
 
 void

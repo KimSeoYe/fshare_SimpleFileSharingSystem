@@ -77,13 +77,20 @@ list ()
     shutdown(sock_fd, SHUT_WR) ;
 
     int resp_header = recv_int(sock_fd) ;
+
     if (resp_header == 1) {
         perror("ERROR: cannot request list\n") ;
         exit(1) ;
     }
 
-    recv_meta_data(sock_fd) ;
-    print_meta_data() ;
+    int ver, len ;
+    char * data ;
+
+    while ((ver = recv_int(sock_fd)) >= 0) {
+        len = recv_int(sock_fd) ;
+        data = recv_n_message(sock_fd, len) ;
+        printf("> %d %s\n", ver, data) ;
+    }
 
     close(sock_fd) ;
 }
@@ -95,7 +102,6 @@ get (char * file_name)
 
     send_int(sock_fd, 2) ;
 
-    // send file name
     send_message(sock_fd, file_name) ;
     shutdown(sock_fd, SHUT_WR) ;
 
@@ -130,7 +136,6 @@ put (char * file_name)
 
     send_int(sock_fd, strlen(file_name)) ;
     send_message(sock_fd, file_name) ;
-
     read_and_send(sock_fd, file_name) ;
     shutdown(sock_fd, SHUT_WR) ;
 
@@ -140,14 +145,15 @@ put (char * file_name)
         exit(1) ;
     }
 
-    int ver = recv_int(sock_fd) ;
+    int version = recv_int(sock_fd) ;
 
-    int exist = update_version(file_name, ver) ;
+    int exist = update_version(file_name, version) ;
     if (exist == -1) {
-        append(file_name, ver) ;
+        append_meta_data(file_name, version) ;
     }
 
-    print_meta_data() ;
+    // debug
+    // print_meta_data() ;
 
     close(sock_fd) ;
     free(file_name) ;
@@ -170,8 +176,8 @@ handler (int sig)
     }
 }
 
-void * 
-monitor_dir (void * ptr)
+void 
+monitor_dir ()
 {
     signal(SIGINT, handler) ;
 
@@ -180,10 +186,8 @@ monitor_dir (void * ptr)
         perror("inotify_init") ;
     }
     i_wd = inotify_add_watch(i_fd, "./", IN_CREATE | IN_MOVED_TO) ;
-    /*
-        Todo. 2.0
-        IN_MODIFY ? -> nano, ...
-    */
+    
+    // Todo. 2.0 IN_MODIFY ? -> nano, ...
 
     while (1) {
         char buffer[EVENT_BUF_LEN] ;
@@ -202,6 +206,7 @@ monitor_dir (void * ptr)
                     if (S_ISREG(buf.st_mode) && event->name[0] != '.' && strcmp(event->name, "4913") != 0 && strstr(event->name, "~") == NULL) {
                         char * file_name = strdup(event->name) ;
                         put(file_name) ;
+                        list() ;
                     }
                 }
             }
@@ -215,12 +220,7 @@ main (int argc, char ** argv)
 {
     get_parameters(argc, argv, ip_addr, &port_num) ;
 
-    pthread_t monitor_thr ;
-    if (pthread_create(&monitor_thr, NULL, monitor_dir, NULL) != 0) {
-        perror("ERROR - pthread_create: ") ;
-        exit(1) ;
-	}
+    monitor_dir() ;
 
-    pthread_join(monitor_thr, NULL) ;
     return 0 ;
 }

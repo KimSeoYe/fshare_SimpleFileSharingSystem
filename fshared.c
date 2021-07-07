@@ -50,7 +50,7 @@ get_parameters (int argc, char ** argv, int * port_num, char * dir_name)
 }
 
 void
-list_d (int conn) 
+pre_list_d (int conn) 
 {
     DIR * dp = opendir(dir_name) ;
     
@@ -64,7 +64,7 @@ list_d (int conn)
                     1. initialize linked list (meta_data) -> temporary!!
                     2. send to the client! "send_node"
                 */
-                append(sub->d_name, 0) ;
+                append_meta_data(sub->d_name, 0) ;
                 send_int(conn, 0) ;
                 send_int(conn, strlen(sub->d_name)) ;
                 send_message(conn, sub->d_name) ;
@@ -80,7 +80,15 @@ list_d (int conn)
         shutdown(conn, SHUT_WR) ;
         return ;
     }
-}   
+}  
+
+void
+list_d (int conn)
+{
+    send_int(conn, 0) ; // success
+    send_meta_data(conn) ;
+    shutdown(conn, SHUT_WR) ;
+}
 
 void
 get_d (int conn) 
@@ -150,7 +158,7 @@ put_d (int conn)
         }
     }
     else {
-        append(file_name, 0) ;
+        append_meta_data(file_name, 0) ;
     }
 
     send_int(conn, 0) ; // success
