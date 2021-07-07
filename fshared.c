@@ -17,20 +17,6 @@ char dir_name[PATH_MAX] ; // pointer로? PATH_MAX로?
 void
 get_parameters (int argc, char ** argv, int * port_num, char * dir_name)
 {
-    /*
-        Command Line Interface
-        ./fshared -p <port_num> -d <dir_name>
-
-        * argc 확인 
-        * getopt p:d:
-            * p -> int로 저장 (int가 아니면...?)
-            * d -> string으로 저장
-        * 디렉토리 유무 확인
-            1. 디렉토리가 존재하지 않는 경우 (access 사용)
-            2. 존재하지만 디렉토리가 아닌 경우 (stat 사용)
-            3. 디렉토리가 존재하는 경우
-    */
-
     if (argc != 5) {
         perror("ERROR: ./fshared -p <port_num> -d <dir_name>") ;
         exit(1) ;
@@ -69,7 +55,7 @@ list_d (int conn)
     DIR * dp = opendir(dir_name) ;
     
     if (dp != NULL) {
-        send_header(conn, 0) ;
+        send_int(conn, 0) ;
 
         struct dirent * sub ;
         for ( ; sub = readdir(dp); ) {
@@ -79,8 +65,8 @@ list_d (int conn)
                     2. send to the client! "send_node"
                 */
                 append(0, sub->d_name) ;
-                send_header(conn, 0) ;
-                send_header(conn, strlen(sub->d_name)) ;
+                send_int(conn, 0) ;
+                send_int(conn, strlen(sub->d_name)) ;
                 send_message(conn, sub->d_name) ;
             }   
         }
@@ -88,7 +74,7 @@ list_d (int conn)
     }
     else {
         perror("opendir: ") ;
-        send_header(conn, 1) ;
+        send_int(conn, 1) ;
         shutdown(conn, SHUT_WR) ;
         return ;
     }
@@ -121,14 +107,14 @@ get_d (int conn)
     if (!S_ISREG(st.st_mode))
         goto err_send ;
 
-    send_header(conn, 0) ;
+    send_int(conn, 0) ;
     read_and_send(conn, file_path) ;
     shutdown(conn, SHUT_WR) ;
 
     return ;
 
 err_send:
-    send_header(conn, 1) ;
+    send_int(conn, 1) ;
     shutdown(conn, SHUT_WR) ;
 }
 
@@ -144,7 +130,7 @@ put_d (int conn)
     // need to recv the length of the file first
     // then recv the file name
 
-    unsigned int name_len = recv_header(conn) ;
+    unsigned int name_len = recv_int(conn) ;
     char * file_name = recv_n_message(conn, name_len) ;
 
     char file_path[PATH_MAX] ;
@@ -153,14 +139,14 @@ put_d (int conn)
 
     // if it is exist..
     if (access(file_path, F_OK) == 0) {
-        send_header(conn, 1) ; // Todo. unsigned! -> success:0 / ...
+        send_int(conn, 1) ; // Todo. unsigned! -> success:0 / ...
         shutdown(conn, SHUT_WR) ;
         return ;
     }
 
     recv_and_write(conn, file_path) ;
 
-    send_header(conn, 0) ;
+    send_int(conn, 0) ;
     shutdown(conn, SHUT_WR) ;
 
     return ;
@@ -172,7 +158,7 @@ child_thr (void * ptr)
     int conn = * ((int *) ptr) ;
     
     unsigned int cmd_id ;
-    cmd_id = recv_header(conn) ;
+    cmd_id = recv_int(conn) ;
 
     switch (cmd_id) {
         case 1:

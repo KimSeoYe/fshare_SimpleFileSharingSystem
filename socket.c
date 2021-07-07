@@ -52,20 +52,20 @@ append (int ver, char * file_name)
 }
 
 void
-update_version (char * file_name)
+update_version (char * file_name, int ver)
 {
     Node * itr = 0x0 ;
 
     for (itr = meta_data.next; itr != 0x0; itr = itr->next) {
         if (strcmp(itr->file_name, file_name) == 0) {
-            itr->ver ++ ;
+            itr->ver = ver ;
             break ;
         }
     }
 }
 
 void
-send_header (int sock, int h)
+send_int (int sock, int h)
 {
     int s = 0 ;
     int len = 4 ;
@@ -77,7 +77,7 @@ send_header (int sock, int h)
 }
 
 int
-recv_header (int sock)
+recv_int (int sock)
 {   
     int s = 0 ; 
     int len = 4 ;
@@ -161,8 +161,8 @@ recv_meta_data (int sock)
     int ver, len ;
     char * data ;
 
-    while ((ver = recv_header(sock)) > 0) {
-        len = recv_header(sock) ;
+    while ((ver = recv_int(sock)) > 0) {
+        len = recv_int(sock) ;
         data = recv_n_message(sock, len) ;
         append(ver, data) ;
     }
@@ -178,7 +178,7 @@ read_and_send (int sock, char * file_path)
     */
     FILE * r_fp = fopen(file_path, "rb") ;
     if (r_fp == NULL) {
-        send_header(sock, 1) ;
+        send_int(sock, 1) ;
     }
 
     while (feof(r_fp) == 0) {
@@ -202,7 +202,7 @@ recv_and_write (int sock, char * file_path)
 {
     FILE * w_fp = fopen(file_path, "wb") ;
     if (w_fp == NULL) {
-        send_header(sock, 1) ;
+        send_int(sock, 1) ;
     }
     
     char buffer[1024] ;

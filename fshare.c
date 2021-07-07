@@ -114,10 +114,10 @@ list (char * ip_addr, int port_num, int option)
 {
     int sock_fd = make_connection(ip_addr, port_num) ;
 
-    send_header(sock_fd, option) ;
+    send_int(sock_fd, option) ;
     shutdown(sock_fd, SHUT_WR) ;
 
-    int resp_header = recv_header(sock_fd) ;
+    int resp_header = recv_int(sock_fd) ;
     if (resp_header == 1) {
         perror("ERROR: cannot request list\n") ;
         exit(1) ;
@@ -134,13 +134,13 @@ get (char * ip_addr, int port_num, int option, char * file_name)
 {
     int sock_fd = make_connection(ip_addr, port_num) ;
     
-    send_header(sock_fd, option) ;
+    send_int(sock_fd, option) ;
 
     // send file name
     send_message(sock_fd, file_name) ;
     shutdown(sock_fd, SHUT_WR) ;
 
-    int resp_header = recv_header(sock_fd) ;
+    int resp_header = recv_int(sock_fd) ;
     if (resp_header == 1) {
         perror("ERROR: cannot request get\n") ;
         exit(1) ;
@@ -154,7 +154,7 @@ put (char * ip_addr, int port_num, int option, char * file_name)
 {
     int sock_fd = make_connection(ip_addr, port_num) ;
     
-    send_header(sock_fd, option) ;
+    send_int(sock_fd, option) ;
 
     // Todo. check if filename is valid
     if (strstr(file_name, "/") != NULL)
@@ -169,13 +169,13 @@ put (char * ip_addr, int port_num, int option, char * file_name)
         goto err_exit ;
  
     // need to send the length of the filename
-    send_header(sock_fd, strlen(file_name)) ;
+    send_int(sock_fd, strlen(file_name)) ;
     send_message(sock_fd, file_name) ;
 
     read_and_send(sock_fd, file_name) ;
     shutdown(sock_fd, SHUT_WR) ;
 
-    int resp_header = recv_header(sock_fd) ;
+    int resp_header = recv_int(sock_fd) ;
     
     if (resp_header == 1) {
         perror("ERROR: cannot request put\n") ;

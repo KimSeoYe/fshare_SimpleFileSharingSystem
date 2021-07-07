@@ -9,11 +9,11 @@ void print_meta_data () ;
 
 void append (int ver, char * file_name) ;
 
-void update_version (char * file_name) ;
+void update_version (char * file_name, int ver) ;
 
-void send_header (int sock, int h) ;
+void send_int (int sock, int h) ;
 
-int recv_header (int sock) ;
+int recv_int (int sock) ;
 
 void send_message(int sock, char * message) ;
 
