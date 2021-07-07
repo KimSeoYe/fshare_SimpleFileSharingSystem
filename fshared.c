@@ -167,6 +167,8 @@ put_d (int conn)
  
     recv_and_write(conn, file_path) ;
 
+    // print_meta_data() ;
+
     return ;
 }
 

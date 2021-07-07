@@ -21,7 +21,7 @@ void
 print_meta_data () 
 {
     Node* itr = 0x0;
-    printf("============ clients ==============\n");
+    printf("============= files ===============\n");
     pthread_mutex_lock(&m);
     for(itr = meta_data.next; itr != 0x0; itr = itr->next) {
         printf("%s %d\n", itr->file_name, itr->ver);

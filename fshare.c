@@ -183,12 +183,22 @@ put (char * ip_addr, int port_num, int option, char * file_name)
 
     // recv the version of the file
     int ver = recv_int(sock_fd) ;
-    printf("%s %d\n", file_name, ver) ;
     /*
         Todo. 2.0
         만들어졌을 때 Put 하는 경우 -> linked list에 append한다.
         이미 있는데 수정되어서 Put 하는 경우 -> linked list에서 찾아서 update한다.
+
+        Temporary
+        linked list에서 찾아서 update한다.
+        -> linked list에 없어서 실패한 경우 append한다.
+
+        *** server가 종료될때마다 list 정보가 날아가긴 한다...
     */
+    int exist = update_version(file_name, ver) ;
+    if (exist == -1) {
+        append(file_name, ver) ;
+    }
+
 
     return ;
 
