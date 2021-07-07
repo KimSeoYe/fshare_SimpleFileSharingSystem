@@ -3,15 +3,27 @@
 #include <string.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <errno.h>
+#include <signal.h>
+#include <pthread.h>
+#include <netinet/in.h> 
+#include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
-#include <netinet/in.h> 
-#include <arpa/inet.h>
-// #include <regex.h>
+#include <sys/inotify.h>
 #include <linux/limits.h>
 
 #include "socket.h"
+
+#define EVENT_SIZE ( sizeof (struct inotify_event) )
+#define EVENT_BUF_LEN ( 1024 * ( EVENT_SIZE + 16 ) )
+
+int i_fd ;
+int i_wd ;
+
+char ip_addr[32] ; // max 12 ip address + dot(.)
+int port_num ;
 
 void
 get_parameters (int argc, char ** argv, char * ip_addr, int * port_num) 
@@ -57,8 +69,10 @@ make_connection (char * ip_addr, int port_num) {
 }
 
 void
-list (int sock_fd)
+list ()
 {
+    int sock_fd = make_connection(ip_addr, port_num) ;
+
     send_int(sock_fd, 1) ;
     shutdown(sock_fd, SHUT_WR) ;
 
@@ -75,8 +89,10 @@ list (int sock_fd)
 }
 
 void
-get (int sock_fd, char * file_name)
+get (char * file_name)
 {
+    int sock_fd = make_connection(ip_addr, port_num) ;
+
     send_int(sock_fd, 2) ;
 
     // send file name
@@ -90,12 +106,14 @@ get (int sock_fd, char * file_name)
     }
 
     recv_and_write(sock_fd, file_name) ;
+
+    close(sock_fd) ;
 }
 
 void
-put (int sock_fd, char * file_name)
+put (char * file_name)
 {
-    send_int(sock_fd, 3) ;
+    int sock_fd = make_connection(ip_addr, port_num) ;
 
     if (strstr(file_name, "/") != NULL)
         goto err_exit ;
@@ -108,6 +126,8 @@ put (int sock_fd, char * file_name)
     if (!S_ISREG(st.st_mode))
         goto err_exit ;
 
+    send_int(sock_fd, 3) ;
+
     send_int(sock_fd, strlen(file_name)) ;
     send_message(sock_fd, file_name) ;
 
@@ -115,24 +135,13 @@ put (int sock_fd, char * file_name)
     shutdown(sock_fd, SHUT_WR) ;
 
     int resp_header = recv_int(sock_fd) ;
-    
     if (resp_header == 1) {
         perror("ERROR: cannot request put\n") ;
         exit(1) ;
     }
 
     int ver = recv_int(sock_fd) ;
-    /*
-        Todo. 2.0
-        만들어졌을 때 Put 하는 경우 -> linked list에 append한다.
-        이미 있는데 수정되어서 Put 하는 경우 -> linked list에서 찾아서 update한다.
 
-        Temporary
-        linked list에서 찾아서 update한다.
-        -> linked list에 없어서 실패한 경우 append한다.
-
-        *** server가 종료될때마다 list 정보가 날아가긴 한다...
-    */
     int exist = update_version(file_name, ver) ;
     if (exist == -1) {
         append(file_name, ver) ;
@@ -140,21 +149,78 @@ put (int sock_fd, char * file_name)
 
     print_meta_data() ;
 
+    close(sock_fd) ;
+    free(file_name) ;
     return ;
 
 err_exit:
     perror("ERROR: invalid file name") ;
+    close(sock_fd) ;
+    free(file_name) ;
     exit(1) ;
+}
+
+void 
+handler (int sig)
+{
+    if (sig == SIGINT) {
+        inotify_rm_watch(i_fd, i_wd) ;
+        close(i_fd) ;
+        exit(0) ;
+    }
+}
+
+void * 
+monitor_dir (void * ptr)
+{
+    signal(SIGINT, handler) ;
+
+    i_fd = inotify_init() ;
+    if (i_fd < 0) {
+        perror("inotify_init") ;
+    }
+    i_wd = inotify_add_watch(i_fd, "./", IN_CREATE | IN_MOVED_TO) ;
+    /*
+        Todo. 2.0
+        IN_MODIFY ? -> nano, ...
+    */
+
+    while (1) {
+        char buffer[EVENT_BUF_LEN] ;
+        int length = read(i_fd, buffer, EVENT_BUF_LEN) ; 
+        if (length < 0) {
+            perror("read") ;
+        }  
+
+        int i = 0;
+        while (i < length) {     
+            struct inotify_event * event = (struct inotify_event *) &buffer[i] ;     
+            if (event->len) {
+                if (event->mask & IN_CREATE || event->mask & IN_MOVED_TO) {
+                    struct stat buf ;
+                    stat(event->name, &buf) ;
+                    if (S_ISREG(buf.st_mode) && event->name[0] != '.' && strcmp(event->name, "4913") != 0 && strstr(event->name, "~") == NULL) {
+                        char * file_name = strdup(event->name) ;
+                        put(file_name) ;
+                    }
+                }
+            }
+            i += EVENT_SIZE + event->len;
+        }
+    }
 }
 
 int
 main (int argc, char ** argv) 
 {
-    char ip_addr[32] ; // max 12 ip address + dot(.)
-    int port_num ;
-
     get_parameters(argc, argv, ip_addr, &port_num) ;
-    int sock_fd = make_connection(ip_addr, port_num) ;
 
+    pthread_t monitor_thr ;
+    if (pthread_create(&monitor_thr, NULL, monitor_dir, NULL) != 0) {
+        perror("ERROR - pthread_create: ") ;
+        exit(1) ;
+	}
+
+    pthread_join(monitor_thr, NULL) ;
     return 0 ;
 }

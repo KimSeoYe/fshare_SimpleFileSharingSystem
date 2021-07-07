@@ -9,6 +9,8 @@ void print_meta_data () ;
 
 void append (char * file_name, int ver) ;
 
+int increase_version (char * file_name) ;
+
 int update_version (char * file_name, int ver) ;
 
 void send_int (int sock, int h) ;

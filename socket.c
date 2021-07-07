@@ -17,11 +17,6 @@ pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER ;
 
 Node meta_data = {0, 0, 0x0, 0x0} ;
 
-/*
-    Todo. 2.0
-    client는 lock이 필요 없음,,,
-*/
-
 void 
 print_meta_data () 
 {
@@ -42,7 +37,7 @@ append (char * file_name, int ver)
 	new_node->next = 0x0 ;
 	new_node->ver = ver ;
     new_node->name_len = strlen(file_name) ;
-    new_node->file_name = file_name ;
+    new_node->file_name = strdup(file_name) ;
 
 	Node* itr = 0x0, *curr = 0x0;
     
@@ -57,6 +52,25 @@ append (char * file_name, int ver)
 }
 
 int
+increase_version (char * file_name)
+{
+    Node * itr = 0x0 ;
+    int new_version = -1 ;
+
+    pthread_mutex_lock(&m);
+    for (itr = meta_data.next; itr != 0x0; itr = itr->next) {
+        if (strcmp(itr->file_name, file_name) == 0) {
+            itr->ver ++ ;
+            new_version = itr->ver ;
+            break ;
+        }
+    }
+    pthread_mutex_unlock(&m);
+
+    return new_version ;
+}
+
+int
 update_version (char * file_name, int ver)
 {
     Node * itr = 0x0 ;
@@ -65,12 +79,8 @@ update_version (char * file_name, int ver)
     pthread_mutex_lock(&m);
     for (itr = meta_data.next; itr != 0x0; itr = itr->next) {
         if (strcmp(itr->file_name, file_name) == 0) {
-            // if the given version is 0, it means increase the version!
-            // because there are no case which need to update the version as 0.
-            if (ver == 0) itr->ver ++ ;
-            else itr->ver = ver ;
-            new_version = itr->ver ;
-
+            itr->ver = ver ;
+            new_version = ver ;
             break ;
         }
     }
@@ -80,7 +90,7 @@ update_version (char * file_name, int ver)
 }
 
 void
-send_int (int sock, int h)
+send_int (int sock, int h)  // Todo. unsigned int!!!!
 {
     int s = 0 ;
     int len = 4 ;

@@ -123,11 +123,6 @@ err_send:
 void
 put_d (int conn) 
 {
-    /*
-        1. recv file name
-        2. make proper path
-        3. recv and write
-    */
     unsigned int name_len = recv_int(conn) ;
     char * file_name = recv_n_message(conn, name_len) ;
 
@@ -137,45 +132,40 @@ put_d (int conn)
 
     /*
         Todo. 2.0 
-        need to be changed!
-
         * if it is exist ?
         -> find it in the linked list
             -> exist: update version (+1) 
             -> not exist: bug...
 
         * not exist: append (ver = 0)
-
-        * send_int 0 (success)
-        * send the version (updated)
-        * shutdown
-        * then recv and write
     */
+
     int new_version ;
     if (access(file_path, F_OK) == 0) {
-        new_version = update_version(file_name, 0) ;
+        new_version = increase_version(file_name) ;
         if (new_version == -1) {
-            send_int(conn, 1) ;
+            send_int(conn, 1) ; // failed
             shutdown(conn, SHUT_WR) ;
+            return ;
         }
     }
     else {
         append(file_name, 0) ;
     }
 
-    send_int(conn, 0) ;
+    send_int(conn, 0) ; // success
     send_int(conn, new_version) ;
     shutdown(conn, SHUT_WR) ;
  
     recv_and_write(conn, file_path) ;
 
-    // print_meta_data() ;
+    print_meta_data() ;
 
     return ;
 }
 
 void * 
-child_thr (void * ptr)
+worker (void * ptr)
 {
     int conn = * ((int *) ptr) ;
     
@@ -202,12 +192,6 @@ child_thr (void * ptr)
 int
 main (int argc, char ** argv)
 {
-    /*
-        * parameter 받기 -> port_num & dir_name
-        * socket 연결하기
-        Q. 디렉토리를 언제 열지?
-    */
-
     int port_num ;
     get_parameters(argc, argv, &port_num, dir_name) ;
 
@@ -248,7 +232,7 @@ main (int argc, char ** argv)
 		*sock_addr = new_socket ;
 
 		pthread_t thr ;
-		if (pthread_create(&thr, NULL, child_thr, (void *) sock_addr) != 0) {
+		if (pthread_create(&thr, NULL, worker, (void *) sock_addr) != 0) {
 			perror("ERROR - pthread_create: ") ;
 			exit(1) ;
 		}
