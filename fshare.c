@@ -16,6 +16,8 @@
 
 #include "socket.h"
 
+#define DEBUG
+
 #define EVENT_SIZE ( sizeof (struct inotify_event) )
 #define EVENT_BUF_LEN ( 1024 * ( EVENT_SIZE + 16 ) )
 
@@ -68,6 +70,51 @@ make_connection (char * ip_addr, int port_num) {
     return sock_fd ;
 }
 
+void 
+print_list (Node * list) 
+{
+    Node* itr = 0x0;
+    printf("============= files ===============\n");
+    for(itr = list->next; itr != 0x0; itr = itr->next) {
+        printf("%s %d\n", itr->file_name, itr->ver);
+    }
+    printf("===================================\n");
+}
+
+void
+append (Node * list, char * file_name, int ver)
+{
+	Node * new_node = (Node *) malloc(sizeof(Node) * 1) ;
+	new_node->next = 0x0 ;
+	new_node->ver = ver ;
+    new_node->name_len = strlen(file_name) ;
+    new_node->file_name = strdup(file_name) ;
+
+	Node* itr = 0x0, *curr = 0x0;
+
+    for (itr = list ; itr != 0x0 ; itr = itr->next) {
+        curr = itr;
+    }
+    curr->next = new_node;
+}
+
+Node *
+recv_meta_data (int sock_fd)
+{
+    int ver, len ;
+    char * data ;
+
+    Node * server_data = (Node *) malloc(sizeof(Node) * 1) ;
+
+    while ((ver = recv_int(sock_fd)) >= 0) {
+        len = recv_int(sock_fd) ;
+        data = recv_n_message(sock_fd, len) ;
+        append(server_data, data, ver) ;
+    }
+
+    return server_data ;
+}
+
 void
 list ()
 {
@@ -83,14 +130,10 @@ list ()
         exit(1) ;
     }
 
-    int ver, len ;
-    char * data ;
-
-    while ((ver = recv_int(sock_fd)) >= 0) {
-        len = recv_int(sock_fd) ;
-        data = recv_n_message(sock_fd, len) ;
-        printf("> %d %s\n", ver, data) ;
-    }
+    Node * server_data = recv_meta_data(sock_fd) ;
+#ifdef DEBUG
+    print_list(server_data) ;
+#endif
 
     close(sock_fd) ;
 }
@@ -152,8 +195,9 @@ put (char * file_name)
         append_meta_data(file_name, version) ;
     }
 
-    // debug
-    print_meta_data() ;
+#ifdef DEBUG
+    // print_meta_data() ;
+#endif
 
     close(sock_fd) ;
     free(file_name) ;
