@@ -50,45 +50,13 @@ get_parameters (int argc, char ** argv, int * port_num, char * dir_name)
 }
 
 void
-pre_list_d (int conn) 
-{
-    DIR * dp = opendir(dir_name) ;
-    
-    if (dp != NULL) {
-        send_int(conn, 0) ;
-
-        struct dirent * sub ;
-        for ( ; sub = readdir(dp); ) {
-            if (sub->d_type == DT_REG) { 
-                /*
-                    1. initialize linked list (meta_data) -> temporary!!
-                    2. send to the client! "send_node"
-                */
-                append_meta_data(sub->d_name, 0) ;
-                send_int(conn, 0) ;
-                send_int(conn, strlen(sub->d_name)) ;
-                send_message(conn, sub->d_name) ;
-            }   
-        }
-        shutdown(conn, SHUT_WR) ;
-#ifdef DEBUG
-        print_meta_data() ;
-#endif
-    }
-    else {
-        perror("opendir: ") ;
-        send_int(conn, 1) ;
-        shutdown(conn, SHUT_WR) ;
-        return ;
-    }
-}  
-
-void
 list_d (int conn)
 {
     send_int(conn, 0) ; // success
     send_meta_data(conn) ;
     shutdown(conn, SHUT_WR) ;
+
+    print_meta_data() ;
 }
 
 void
@@ -167,8 +135,6 @@ put_d (int conn)
     shutdown(conn, SHUT_WR) ;
  
     recv_and_write(conn, file_path) ;
-
-    print_meta_data() ;
 
     return ;
 }

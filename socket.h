@@ -13,6 +13,8 @@ int increase_version (char * file_name) ;
 
 int update_version (char * file_name, int ver) ;
 
+int find_meta_data (Node * node) ;
+
 void send_int (int sock, int h) ;
 
 int recv_int (int sock) ;

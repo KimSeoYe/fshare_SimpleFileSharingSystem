@@ -13,9 +13,11 @@
 
 #include "socket.h"
 
+#define DEBUG
+
 pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER ;
 
-Node meta_data = {0, 0, 0x0, 0x0} ;
+Node meta_data = {0, 0, 0x0, 0x0} ; // Todo. list.c나 새로운 파일로 쪼개기
 
 void 
 print_meta_data () 
@@ -52,7 +54,7 @@ append_meta_data (char * file_name, int ver)
 }
 
 int
-increase_version (char * file_name)
+increase_version (char * file_name) // Todo. mix w/ update_version
 {
     Node * itr = 0x0 ;
     int new_version = -1 ;
@@ -87,6 +89,33 @@ update_version (char * file_name, int ver)
     pthread_mutex_unlock(&m);
 
     return new_version ;
+}
+
+int
+find_meta_data (Node * node)
+{
+    int s_found = 0 ;
+
+    Node * m_itr = 0x0 ;
+    pthread_mutex_lock(&m) ; 
+    for (m_itr = meta_data.next; m_itr != 0x0; m_itr = m_itr->next) {
+        if (strcmp(node->file_name, m_itr->file_name) == 0 && node->ver == m_itr->ver) {
+        #ifdef DEBUG
+            printf("> %s found!\n", node->file_name) ;
+        #endif
+            s_found = 1 ;
+            break ;
+        }
+    }
+    pthread_mutex_unlock(&m) ; 
+
+#ifdef DEBUG
+    if (s_found == 0) {
+        printf("> get %s\n",node->file_name) ;
+    }
+#endif
+
+    return s_found ;
 }
 
 void

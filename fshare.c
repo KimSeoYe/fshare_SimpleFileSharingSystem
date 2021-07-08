@@ -135,6 +135,11 @@ list ()
     print_list(server_data) ;
 #endif
 
+    Node * s_itr = 0x0 ;
+    for (s_itr = server_data->next; s_itr != 0x0; s_itr = s_itr->next) {
+        int s_found = find_meta_data(s_itr) ;
+    }
+
     close(sock_fd) ;
 }
 
