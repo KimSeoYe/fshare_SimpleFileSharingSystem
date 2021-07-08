@@ -137,7 +137,7 @@ find_meta_data (Node * node)
     for (m_itr = meta_data.next; m_itr != 0x0; m_itr = m_itr->next) {
         if (strcmp(node->file_name, m_itr->file_name) == 0 && node->ver == m_itr->ver) {
         #ifdef DEBUG
-            printf("> %s found!\n", node->file_name) ;
+            // printf("> %s found!\n", node->file_name) ;
         #endif
             s_found = 1 ;
             break ;

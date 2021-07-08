@@ -21,6 +21,10 @@
 #define EVENT_SIZE ( sizeof (struct inotify_event) )
 #define EVENT_BUF_LEN ( 1024 * ( EVENT_SIZE + 16 ) )
 
+const int LIST = 1 ;
+const int GET = 2 ;
+const int PUT = 3 ;
+
 int i_fd ;
 int i_wd ;
 
@@ -120,7 +124,7 @@ get (char * file_name)
 {
     int sock_fd = make_connection(ip_addr, port_num) ;
 
-    send_int(sock_fd, 2) ;
+    send_int(sock_fd, GET) ;
 
     send_message(sock_fd, file_name) ;
     shutdown(sock_fd, SHUT_WR) ;
@@ -141,9 +145,9 @@ get (char * file_name)
         append_meta_data(file_name, new_version) ;
     }
 
-#ifdef DEBUG
-    print_meta_data() ;
-#endif
+// #ifdef DEBUG
+//     print_meta_data() ;
+// #endif
 
     close(sock_fd) ;
 }
@@ -153,7 +157,7 @@ list ()
 {
     int sock_fd = make_connection(ip_addr, port_num) ;
 
-    send_int(sock_fd, 1) ;
+    send_int(sock_fd, LIST) ;
     shutdown(sock_fd, SHUT_WR) ;
 
     int resp_header = recv_int(sock_fd) ;
@@ -195,7 +199,7 @@ put (char * file_name)
     if (!S_ISREG(st.st_mode))
         goto err_exit ;
 
-    send_int(sock_fd, 3) ;
+    send_int(sock_fd, PUT) ;
 
     send_int(sock_fd, strlen(file_name)) ;
     send_message(sock_fd, file_name) ;
@@ -270,7 +274,6 @@ monitor_dir ()
                     if (S_ISREG(buf.st_mode) && event->name[0] != '.' && strcmp(event->name, "4913") != 0 && strstr(event->name, "~") == NULL) {
                         char * file_name = strdup(event->name) ;
                         put(file_name) ;
-                        list() ;
                     }
                 }
             }
@@ -279,10 +282,29 @@ monitor_dir ()
     }
 }
 
+void *
+acquire_list ()
+{
+    while (1) {
+        sleep(10) ; // proper time ?
+        list() ;
+    #ifdef DEBUG
+        printf("> list called!\n") ;
+        print_meta_data() ;
+    #endif
+    }
+}
+
 int
 main (int argc, char ** argv) 
 {
     get_parameters(argc, argv, ip_addr, &port_num) ;
+
+    pthread_t list_thr ;
+    if (pthread_create(&list_thr, NULL, acquire_list, NULL) != 0) {
+		perror("ERROR - pthread_create: ") ;
+		exit(1) ;
+	}
 
     monitor_dir() ;
 

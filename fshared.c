@@ -12,6 +12,10 @@
 
 #include "socket.h"
 
+// int LIST = 1 ;
+// int GET = 2 ;
+// int PUT = 3 ;
+
 char dir_name[PATH_MAX] ; // pointer로? PATH_MAX로?
 
 void
@@ -150,7 +154,6 @@ worker (void * ptr)
     unsigned int cmd_id ;
     cmd_id = recv_int(conn) ;
     
-    // Todo. const
     switch (cmd_id) {
         case 1:
             list_d(conn) ;
