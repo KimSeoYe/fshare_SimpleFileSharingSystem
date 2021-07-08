@@ -32,6 +32,24 @@ print_meta_data ()
     printf("===================================\n");
 }
 
+int
+is_exist (char * file_name)
+{
+    int exist = 0 ;
+    Node * itr = 0x0 ;
+
+    pthread_mutex_lock(&m) ;
+    for (itr = meta_data.next; itr != 0x0; itr = itr->next) {
+        if (strcmp(itr->file_name, file_name) == 0) {
+            exist = 1 ;
+            break ;
+        }
+    }
+    pthread_mutex_unlock(&m) ;
+
+    return exist ;
+}
+
 void
 append_meta_data (char * file_name, int ver)
 {
@@ -89,6 +107,24 @@ update_version (char * file_name, int ver)
     pthread_mutex_unlock(&m);
 
     return new_version ;
+}
+
+int 
+get_version (char * file_name) 
+{
+    int ver = 0 ;
+    Node * itr = 0x0 ;
+    
+    pthread_mutex_lock(&m) ;
+    for (itr = meta_data.next; itr != 0x0; itr = itr->next) {
+        if (strcmp(itr->file_name, file_name) == 0) {
+            ver = itr->ver ;
+            break ;
+        }
+    }
+    pthread_mutex_unlock(&m) ;
+
+    return ver ;
 }
 
 int

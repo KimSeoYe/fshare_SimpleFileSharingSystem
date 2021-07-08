@@ -86,7 +86,10 @@ get_d (int conn)
     if (!S_ISREG(st.st_mode))
         goto err_send ;
 
+    int version = get_version(file_name) ;
+
     send_int(conn, 0) ;
+    send_int(conn, version) ;
     read_and_send(conn, file_path) ;
     shutdown(conn, SHUT_WR) ;
 
@@ -100,15 +103,8 @@ err_send:
 void
 put_d (int conn) 
 {
-    unsigned int name_len = recv_int(conn) ;
-    char * file_name = recv_n_message(conn, name_len) ;
-
-    char file_path[PATH_MAX] ;
-    strcpy(file_path, dir_name) ; // Todo. check if the dir_name has /
-    strcat(file_path, file_name) ;
-
     /*
-        Todo. 2.0 
+        fshare 2.0 
         * if it is exist ?
         -> find it in the linked list
             -> exist: update version (+1) 
@@ -116,6 +112,13 @@ put_d (int conn)
 
         * not exist: append (ver = 0)
     */
+
+    unsigned int name_len = recv_int(conn) ;
+    char * file_name = recv_n_message(conn, name_len) ;
+
+    char file_path[PATH_MAX] ;
+    strcpy(file_path, dir_name) ; // Todo. check if the dir_name has /
+    strcat(file_path, file_name) ;
 
     int new_version ;
     if (access(file_path, F_OK) == 0) {
@@ -146,7 +149,8 @@ worker (void * ptr)
     
     unsigned int cmd_id ;
     cmd_id = recv_int(conn) ;
-
+    
+    // Todo. const
     switch (cmd_id) {
         case 1:
             list_d(conn) ;

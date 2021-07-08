@@ -7,11 +7,15 @@ typedef struct _node {
 
 void print_meta_data () ;
 
+int is_exist (char * file_name) ;
+
 void append_meta_data (char * file_name, int ver) ;
 
 int increase_version (char * file_name) ;
 
 int update_version (char * file_name, int ver) ;
+
+int get_version (char * file_name) ;
 
 int find_meta_data (Node * node) ;
 

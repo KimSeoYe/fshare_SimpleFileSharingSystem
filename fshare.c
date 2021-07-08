@@ -116,6 +116,39 @@ recv_meta_data (int sock_fd)
 }
 
 void
+get (char * file_name)
+{
+    int sock_fd = make_connection(ip_addr, port_num) ;
+
+    send_int(sock_fd, 2) ;
+
+    send_message(sock_fd, file_name) ;
+    shutdown(sock_fd, SHUT_WR) ;
+
+    int resp_header = recv_int(sock_fd) ;
+    if (resp_header == 1) {
+        perror("ERROR: cannot request get\n") ;
+        exit(1) ;
+    }
+
+    int new_version = recv_int(sock_fd) ;
+    recv_and_write(sock_fd, file_name) ;
+
+    if (is_exist(file_name)) {
+        update_version(file_name, new_version) ;
+    }
+    else {
+        append_meta_data(file_name, new_version) ;
+    }
+
+#ifdef DEBUG
+    print_meta_data() ;
+#endif
+
+    close(sock_fd) ;
+}
+
+void
 list ()
 {
     int sock_fd = make_connection(ip_addr, port_num) ;
@@ -132,34 +165,16 @@ list ()
 
     Node * server_data = recv_meta_data(sock_fd) ;
 #ifdef DEBUG
-    print_list(server_data) ;
+    // print_list(server_data) ;
 #endif
 
     Node * s_itr = 0x0 ;
     for (s_itr = server_data->next; s_itr != 0x0; s_itr = s_itr->next) {
         int s_found = find_meta_data(s_itr) ;
+        if (s_found == 0) {
+            get(s_itr->file_name) ;
+        }
     }
-
-    close(sock_fd) ;
-}
-
-void
-get (char * file_name)
-{
-    int sock_fd = make_connection(ip_addr, port_num) ;
-
-    send_int(sock_fd, 2) ;
-
-    send_message(sock_fd, file_name) ;
-    shutdown(sock_fd, SHUT_WR) ;
-
-    int resp_header = recv_int(sock_fd) ;
-    if (resp_header == 1) {
-        perror("ERROR: cannot request get\n") ;
-        exit(1) ;
-    }
-
-    recv_and_write(sock_fd, file_name) ;
 
     close(sock_fd) ;
 }
