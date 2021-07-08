@@ -12,11 +12,16 @@
 
 #include "socket.h"
 
+/*
+    Todo. 2.0
+    If the server is first opened, and it already has some files?
+*/
+
 #define LIST 1 
 #define GET 2 
 #define PUT 3 
 
-char dir_name[PATH_MAX] ; // pointer로? PATH_MAX로?
+char dir_name[PATH_MAX] ;
 
 void
 get_parameters (int argc, char ** argv, int * port_num, char * dir_name)
@@ -66,15 +71,9 @@ list_d (int conn)
 void
 get_d (int conn) 
 {
-    /*
-        1. recv file name  
-        2. check if the file name is valid!
-        * err check for resp.header
-        4. read and send the file
-    */
     char * file_name = recv_message(conn) ;
 
-    if (strstr(file_name, "/") != NULL)     // . ..
+    if (strstr(file_name, "/") != NULL)     // Todo. . ..
         goto err_send ;
 
     char file_path[PATH_MAX] ;
@@ -107,16 +106,6 @@ err_send:
 void
 put_d (int conn) 
 {
-    /*
-        fshare 2.0 
-        * if it is exist ?
-        -> find it in the linked list
-            -> exist: update version (+1) 
-            -> not exist: bug...
-
-        * not exist: append (ver = 0)
-    */
-
     unsigned int name_len = recv_int(conn) ;
     char * file_name = recv_n_message(conn, name_len) ;
 

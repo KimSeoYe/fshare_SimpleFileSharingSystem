@@ -148,8 +148,8 @@ get (char * file_name)
     }
 
 #ifdef DEBUG
-    printf("> get end! \n") ;
-    print_meta_data() ;
+    // printf("> get end! \n") ;
+    // print_meta_data() ;
 #endif
 
     close(sock_fd) ;
@@ -172,8 +172,8 @@ list ()
 
     Node * server_data = recv_meta_data(sock_fd) ;
 #ifdef DEBUG
-    printf("> server data!\n") ;
-    print_list(server_data) ;
+    // printf("> server data!\n") ;
+    // print_list(server_data) ;
 #endif
 
     Node * s_itr = 0x0 ;
@@ -224,8 +224,8 @@ put (char * file_name)
     }
 
 #ifdef DEBUG
-    printf("> put end!\n") ;
-    print_meta_data() ;
+    // printf("> put end!\n") ;
+    // print_meta_data() ;
 #endif
 
     close(sock_fd) ;
@@ -291,7 +291,7 @@ void *
 acquire_list ()
 {
     while (1) {
-        sleep(10) ; // proper time ?
+        sleep(5) ; // proper time ?
         list() ;
     #ifdef DEBUG
         printf("> list called!\n") ;
@@ -312,6 +312,13 @@ main (int argc, char ** argv)
 	}
 
     monitor_dir() ;
+
+    /*
+        BUG:
+        when the client calls get() automatically,
+        inotify() detects the file as a new file, thus calls put().
+        So the version of the same file is updated two times.
+    */
 
     return 0 ;
 }
