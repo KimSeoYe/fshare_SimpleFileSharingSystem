@@ -74,6 +74,7 @@ make_connection (char * ip_addr, int port_num) {
     return sock_fd ;
 }
 
+#ifdef DEBUG
 void 
 print_list (Node * list) 
 {
@@ -84,6 +85,7 @@ print_list (Node * list)
     }
     printf("===================================\n");
 }
+#endif
 
 void
 append (Node * list, char * file_name, int ver)
@@ -145,9 +147,10 @@ get (char * file_name)
         append_meta_data(file_name, new_version) ;
     }
 
-// #ifdef DEBUG
-//     print_meta_data() ;
-// #endif
+#ifdef DEBUG
+    printf("> get end! \n") ;
+    print_meta_data() ;
+#endif
 
     close(sock_fd) ;
 }
@@ -169,7 +172,8 @@ list ()
 
     Node * server_data = recv_meta_data(sock_fd) ;
 #ifdef DEBUG
-    // print_list(server_data) ;
+    printf("> server data!\n") ;
+    print_list(server_data) ;
 #endif
 
     Node * s_itr = 0x0 ;
@@ -220,7 +224,8 @@ put (char * file_name)
     }
 
 #ifdef DEBUG
-    // print_meta_data() ;
+    printf("> put end!\n") ;
+    print_meta_data() ;
 #endif
 
     close(sock_fd) ;
