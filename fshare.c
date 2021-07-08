@@ -21,9 +21,9 @@
 #define EVENT_SIZE ( sizeof (struct inotify_event) )
 #define EVENT_BUF_LEN ( 1024 * ( EVENT_SIZE + 16 ) )
 
-const int LIST = 1 ;
-const int GET = 2 ;
-const int PUT = 3 ;
+#define LIST 1 
+#define GET 2 
+#define PUT 3 
 
 int i_fd ;
 int i_wd ;

@@ -12,9 +12,9 @@
 
 #include "socket.h"
 
-// int LIST = 1 ;
-// int GET = 2 ;
-// int PUT = 3 ;
+#define LIST 1 
+#define GET 2 
+#define PUT 3 
 
 char dir_name[PATH_MAX] ; // pointer로? PATH_MAX로?
 
@@ -155,13 +155,13 @@ worker (void * ptr)
     cmd_id = recv_int(conn) ;
     
     switch (cmd_id) {
-        case 1:
+        case LIST:
             list_d(conn) ;
             break ;
-        case 2:
+        case GET:
             get_d(conn) ;
             break ;
-        case 3:
+        case PUT:
             put_d(conn) ;
             break ;
     }
