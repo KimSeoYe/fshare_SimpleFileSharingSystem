@@ -17,6 +17,8 @@ $ ./fshare <ip_addr>:<port_num>
 - Creates a client that automatically synchronizes with a shared directory on the server.
 - You can create multiple clients on different directories
 
+<br>
+
 ## Description
 
 - 클라이언트의 디렉토리는 모두 비어있다고 가정한다.
@@ -34,6 +36,7 @@ $ ./fshare <ip_addr>:<port_num>
 - 서버는 파일의 이름과 버전 정보를 함께 넘겨준다. 
 - 클라이언트가 가진 파일의 버전과 서버의 버전이 다를 경우 서버로부터 해당 file과 버전 정보를 `get`(다운로드) 한다. (파일이 없는 경우도 해당된다.)
 
+<br>
 
 ## More
 
