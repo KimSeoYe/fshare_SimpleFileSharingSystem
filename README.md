@@ -15,6 +15,7 @@ $ ./fshared -p <port_num> -d <dir_name>
 $ ./fshare <ip_addr>:<port_num>
 ```
 - Creates a client that automatically synchronizes with a shared directory on the server.
+- You can creates multiple clients on different directories
 
 ## Description
 
